@@ -29,6 +29,18 @@ Gives memory back once a document is closed, so a large PDF (or DjVu, CBZ…) no
 **Requirements:**
 - None. If you use the memory alert (Device status alerts > High memory usage > Threshold), note its default of 100 MB, which is low for PDFs; 300–400 MB is more realistic.
 
+## 2-dashboard-menu-tab.lua
+Adds a Dashboard button (house icon) as the first, leftmost icon of the top menu, in the file browser and while reading. Tapping it closes the menu and opens the [dashboard](https://github.com/t2ym5u/dashboard.koplugin) plugin.
+
+**How it works:**
+- Wraps `FileManagerMenu:setUpdateItemTable()` and `ReaderMenu:setUpdateItemTable()` to insert a menu tab with a callback and `remember = false`, the same kind as the reader's "file browser" icon.
+- When the menu opens, KOReader re-selects the last used tab, and falls back to the first tab when that one can't be remembered — which would now be the Dashboard button. `TouchMenuBar:switchToTab()` is wrapped so that such an automatic switch lands on the next regular tab instead: only a real tap on the icon opens the dashboard. If that guard can't be installed, the button isn't added at all.
+- Change `ICON` at the top of the file to use another icon from `resources/icons/mdlight/` (without `.svg`).
+
+**Requirements:**
+- [dashboard.koplugin](https://github.com/t2ym5u/dashboard.koplugin) installed and enabled; without it, nothing is added.
+- Remembered tab positions shift by one the first time (the new icon takes the first slot).
+
 ---
 
 ## Credits
