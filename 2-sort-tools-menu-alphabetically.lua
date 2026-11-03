@@ -19,7 +19,12 @@ local MenuSorter = require("ui/menusorter")
 
 local separator_id = "----------------------------"
 
-function MenuSorter:sort(item_table, order)
+-- KOReader's own sort, kept as the fallback: if anything below fails on a
+-- KOReader whose menu code moved on, the menu is still built (in by-id order)
+-- rather than not at all.
+local orig_sort = MenuSorter.sort
+
+local function patched_sort(self, item_table, order)
     local menu_table = {}
     local sub_menus = {}
     -- the actual sorting of menu items
@@ -168,10 +173,24 @@ function MenuSorter:sort(item_table, order)
     for sorting_hint, orphans in pairs(orphans_by_hint) do
         table.sort(orphans, function(a, b) return natsort_cmp(a.text or "", b.text or "") end)
         local sorting_hint_menu = self:findById(menu_table["KOMenu:menu_buttons"], sorting_hint)
-        sorting_hint_menu = sorting_hint_menu.sub_item_table or sorting_hint_menu
-        for _, v in ipairs(orphans) do
-            table.insert(sorting_hint_menu, v)
+        if sorting_hint_menu then
+            sorting_hint_menu = sorting_hint_menu.sub_item_table or sorting_hint_menu
+            for _, v in ipairs(orphans) do
+                table.insert(sorting_hint_menu, v)
+            end
+        else
+            -- Same as KOReader since 2026-10 (MenuSorter: skip items whose
+            -- sorting_hint target is missing): the target can legitimately be
+            -- absent, e.g. physical_buttons_setup on a device without keys.
+            logger.warn("menu hint target not found, skipping items:", sorting_hint)
         end
     end
     return menu_table["KOMenu:menu_buttons"]
+end
+
+function MenuSorter:sort(item_table, order)
+    local ok, result = pcall(patched_sort, self, item_table, order)
+    if ok then return result end
+    logger.warn("sort-tools-menu-alphabetically patch failed, using KOReader's own order:", result)
+    return orig_sort(self, item_table, order)
 end
