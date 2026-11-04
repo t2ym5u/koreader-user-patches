@@ -13,7 +13,8 @@
 --   1. empties the in-memory document cache (the page shown last is still
 --      saved to the disk cache first, as KOReader normally does, so reopening
 --      the book stays fast);
---   2. runs two full Lua garbage collections;
+--   2. runs one full Lua garbage collection (a second one freed only ~30 KB
+--      more and doubled the pause on every book close);
 --   3. calls glibc's malloc_trim(0) to hand the freed memory back to the
 --      system (silently skipped where it doesn't exist, e.g. Android).
 --
@@ -46,7 +47,6 @@ end
 
 local function releaseMemory()
     DocCache:clear()
-    collectgarbage()
     collectgarbage()
     if malloc_trim then
         pcall(malloc_trim, 0)
